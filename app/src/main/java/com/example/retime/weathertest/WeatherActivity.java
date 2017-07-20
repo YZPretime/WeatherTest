@@ -4,6 +4,9 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -28,6 +31,11 @@ import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
 
+    public String weatherId;
+
+    public DrawerLayout drawerLayout;
+    private ImageView ivNav;
+    public SwipeRefreshLayout swipeRefresh;
     private ScrollView svWeather;
     private TextView titleTvCity;
     private TextView titleTvUpdateTime;
@@ -50,6 +58,8 @@ public class WeatherActivity extends AppCompatActivity {
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
         setContentView(R.layout.activity_weather);
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ivNav = (ImageView) findViewById(R.id.iv_nav);
         svWeather = (ScrollView) findViewById(R.id.sv_weather);
         titleTvCity = (TextView) findViewById(R.id.title_tv_city);
         titleTvUpdateTime = (TextView) findViewById(R.id.title_tv_update_time);
@@ -62,16 +72,31 @@ public class WeatherActivity extends AppCompatActivity {
         tvCarWash = (TextView) findViewById(R.id.tv_car_wash);
         tvSport = (TextView) findViewById(R.id.tv_sport);
         ivBingPic = (ImageView) findViewById(R.id.iv_bing_pic);
+        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString = sp.getString("weather", null);
         if (weatherString != null) {
             Weather weather = Utility.handleWeatherResponse(weatherString);
+            weatherId = weather.basic.weatherId;
             showWeatherInfo(weather);
         } else {
-            String weatherId = getIntent().getStringExtra("weather_id");
+            weatherId = getIntent().getStringExtra("weather_id");
             svWeather.setVisibility(View.INVISIBLE);
             requestWeather(weatherId);
         }
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather(weatherId);
+            }
+        });
+        ivNav.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
         String bingPic = sp.getString("bing_pic", null);
         if (bingPic != null) {
             Glide.with(this).load(bingPic).into(ivBingPic);
@@ -80,7 +105,7 @@ public class WeatherActivity extends AppCompatActivity {
         }
     }
 
-    private void requestWeather(String weatherId) {
+    public void requestWeather(String weatherId) {
         String weatherUrl = "http://guolin.tech/api/weather?cityid=" + weatherId
                 + "&key=4ab78bf8d6f542f1b6720ae33fc878c4";
         HttpUtils.sendOkHttpRequest(weatherUrl, new Callback() {
@@ -101,6 +126,7 @@ public class WeatherActivity extends AppCompatActivity {
                             Toast.makeText(WeatherActivity.this, "获取天气信息失败",
                                     Toast.LENGTH_SHORT).show();
                         }
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -113,6 +139,7 @@ public class WeatherActivity extends AppCompatActivity {
                     public void run() {
                         Toast.makeText(WeatherActivity.this, "获取天气信息失败",
                                 Toast.LENGTH_SHORT).show();
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
