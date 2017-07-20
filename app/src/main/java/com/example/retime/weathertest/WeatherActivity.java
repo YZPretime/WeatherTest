@@ -1,5 +1,6 @@
 package com.example.retime.weathertest;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -20,6 +21,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.example.retime.weathertest.gson.Forecast;
 import com.example.retime.weathertest.gson.Weather;
+import com.example.retime.weathertest.service.AutoUpdateService;
 import com.example.retime.weathertest.utils.HttpUtils;
 import com.example.retime.weathertest.utils.Utility;
 
@@ -173,38 +175,44 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     private void showWeatherInfo(Weather weather) {
-        String cityName = weather.basic.cityName;
-        String updateTime = weather.basic.update.updateTime.split(" ")[1];
-        String degree = weather.now.temperature + "°C";
-        String weatherInfo = weather.now.more.info;
-        titleTvCity.setText(cityName);
-        titleTvUpdateTime.setText(updateTime);
-        tvDegree.setText(degree);
-        tvWeatherInfo.setText(weatherInfo);
-        llForecast.removeAllViews();
-        for (Forecast forecast :
-                weather.forecastList) {
-            View view = LayoutInflater.from(this).inflate(R.layout.item_forecast, llForecast, false);
-            TextView tvDate = (TextView) view.findViewById(R.id.tv_date);
-            TextView tvInfo = (TextView) view.findViewById(R.id.tv_info);
-            TextView tvMax = (TextView) view.findViewById(R.id.tv_max);
-            TextView tvMin = (TextView) view.findViewById(R.id.tv_min);
-            tvDate.setText(forecast.date);
-            tvInfo.setText(forecast.more.info);
-            tvMax.setText(forecast.temperature.max);
-            tvMin.setText(forecast.temperature.min);
-            llForecast.addView(view);
+        if (weather != null && "ok".equals(weather.status)) {
+            String cityName = weather.basic.cityName;
+            String updateTime = weather.basic.update.updateTime.split(" ")[1];
+            String degree = weather.now.temperature + "°C";
+            String weatherInfo = weather.now.more.info;
+            titleTvCity.setText(cityName);
+            titleTvUpdateTime.setText(updateTime);
+            tvDegree.setText(degree);
+            tvWeatherInfo.setText(weatherInfo);
+            llForecast.removeAllViews();
+            for (Forecast forecast :
+                    weather.forecastList) {
+                View view = LayoutInflater.from(this).inflate(R.layout.item_forecast, llForecast, false);
+                TextView tvDate = (TextView) view.findViewById(R.id.tv_date);
+                TextView tvInfo = (TextView) view.findViewById(R.id.tv_info);
+                TextView tvMax = (TextView) view.findViewById(R.id.tv_max);
+                TextView tvMin = (TextView) view.findViewById(R.id.tv_min);
+                tvDate.setText(forecast.date);
+                tvInfo.setText(forecast.more.info);
+                tvMax.setText(forecast.temperature.max);
+                tvMin.setText(forecast.temperature.min);
+                llForecast.addView(view);
+            }
+            if (weather.aqi != null) {
+                tvAqi.setText(weather.aqi.city.aqi);
+                tvPm25.setText(weather.aqi.city.pm25);
+            }
+            String comfort = "舒适度：" + weather.suggestion.comfort.info;
+            String carWash = "洗车指数：" + weather.suggestion.carWash.info;
+            String sport = "运动建议：" + weather.suggestion.sport.info;
+            tvComfort.setText(comfort);
+            tvCarWash.setText(carWash);
+            tvSport.setText(sport);
+            svWeather.setVisibility(View.VISIBLE);
+            Intent intent = new Intent(this, AutoUpdateService.class);
+            startService(intent);
+        } else {
+            Toast.makeText(this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
         }
-        if (weather.aqi != null) {
-            tvAqi.setText(weather.aqi.city.aqi);
-            tvPm25.setText(weather.aqi.city.pm25);
-        }
-        String comfort = "舒适度：" + weather.suggestion.comfort.info;
-        String carWash = "洗车指数：" + weather.suggestion.carWash.info;
-        String sport = "运动建议：" + weather.suggestion.sport.info;
-        tvComfort.setText(comfort);
-        tvCarWash.setText(carWash);
-        tvSport.setText(sport);
-        svWeather.setVisibility(View.VISIBLE);
     }
 }
