@@ -1,6 +1,7 @@
 package com.example.retime.weathertest;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -10,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,7 +44,7 @@ public class ChooseAreaFragment extends Fragment {
 
     private ProgressDialog progressDialog;
     private TextView tvTitle;
-    private Button btnBack;
+    private ImageView ivBack;
     private ListView listView;
 
     private ArrayAdapter<String> adapter;
@@ -60,7 +62,7 @@ public class ChooseAreaFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.choose_area, container, false);
         tvTitle = (TextView) view.findViewById(R.id.tv_title);
-        btnBack = (Button) view.findViewById(R.id.btn_back);
+        ivBack = (ImageView) view.findViewById(R.id.iv_back);
         listView = (ListView) view.findViewById(R.id.list_view);
         adapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, dataList);
         listView.setAdapter(adapter);
@@ -79,10 +81,16 @@ public class ChooseAreaFragment extends Fragment {
                 } else if (currentLevel == LEVEL_CITY) {
                     selectedCity = cityList.get(i);
                     queryCounties();
+                } else if (currentLevel == LEVEL_COUNTY) {
+                    String weatherId = countyList.get(i).getWeatherId();
+                    Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                    intent.putExtra("weather_id", weatherId);
+                    startActivity(intent);
+                    getActivity().finish();
                 }
             }
         });
-        btnBack.setOnClickListener(new View.OnClickListener() {
+        ivBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (currentLevel == LEVEL_COUNTY) {
@@ -97,7 +105,7 @@ public class ChooseAreaFragment extends Fragment {
 
     private void queryProvinces() {
         tvTitle.setText("中国");
-        btnBack.setVisibility(View.GONE);
+        ivBack.setVisibility(View.GONE);
         provinceList = DataSupport.findAll(Province.class);
         if (provinceList.size() > 0) {
             dataList.clear();
@@ -116,7 +124,7 @@ public class ChooseAreaFragment extends Fragment {
 
     private void queryCities() {
         tvTitle.setText(selectedProvince.getProvinceName());
-        btnBack.setVisibility(View.VISIBLE);
+        ivBack.setVisibility(View.VISIBLE);
         cityList = DataSupport.where("provinceId = ?", String.valueOf(selectedProvince.getId())).find(City.class);
         if (cityList.size() > 0) {
             dataList.clear();
@@ -136,7 +144,7 @@ public class ChooseAreaFragment extends Fragment {
 
     private void queryCounties() {
         tvTitle.setText(selectedCity.getCityName());
-        btnBack.setVisibility(View.VISIBLE);
+        ivBack.setVisibility(View.VISIBLE);
         countyList = DataSupport.where("cityId = ?", String.valueOf(selectedCity.getId())).find(County.class);
         if (countyList.size() > 0) {
             dataList.clear();
